@@ -1,0 +1,1080 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AB 测试样本量计算器</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #18202a;
+      --muted: #657184;
+      --line: #dce2ea;
+      --line-strong: #c4ccd8;
+      --brand: #166534;
+      --brand-soft: #e8f5ed;
+      --warn: #8a5200;
+      --warn-soft: #fff5df;
+      --bad: #b42318;
+      --bad-soft: #fff1f0;
+      --shadow: 0 18px 45px rgba(24, 32, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.5;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 22px 24px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.2;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .preset-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .ghost-button,
+    .primary-button,
+    .icon-button {
+      border: 1px solid var(--line-strong);
+      background: #ffffff;
+      color: var(--ink);
+      height: 36px;
+      border-radius: 6px;
+      padding: 0 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .primary-button {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #ffffff;
+      font-weight: 650;
+    }
+
+    .ghost-button:hover,
+    .icon-button:hover {
+      background: #f8fafc;
+      border-color: #aeb8c6;
+    }
+
+    .primary-button:hover {
+      background: #14532d;
+    }
+
+    .ghost-button:active,
+    .primary-button:active,
+    .icon-button:active {
+      transform: translateY(1px);
+    }
+
+    main {
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      padding: 18px 18px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 17px;
+      line-height: 1.25;
+      font-weight: 730;
+      letter-spacing: 0;
+    }
+
+    .panel-note {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .form {
+      padding: 18px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .section {
+      display: grid;
+      gap: 12px;
+    }
+
+    .section-title {
+      margin: 0;
+      color: #2b3543;
+      font-size: 14px;
+      font-weight: 720;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      color: #344154;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    input,
+    select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line-strong);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      padding: 9px 11px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.13);
+    }
+
+    .with-suffix input {
+      padding-right: 42px;
+    }
+
+    .suffix {
+      position: absolute;
+      right: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    .groups {
+      display: grid;
+      gap: 10px;
+    }
+
+    .group-row {
+      display: grid;
+      grid-template-columns: minmax(92px, 1fr) minmax(92px, 1fr) 36px;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .icon-button {
+      width: 36px;
+      padding: 0;
+      justify-content: center;
+      color: var(--bad);
+    }
+
+    .add-row {
+      justify-self: start;
+    }
+
+    .summary {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 13px;
+      background: #fbfcfd;
+      min-height: 96px;
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+    }
+
+    .kpi strong {
+      font-size: clamp(20px, 2.5vw, 30px);
+      line-height: 1.05;
+      letter-spacing: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .kpi span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .main-kpi {
+      background: var(--brand-soft);
+      border-color: #b8dec7;
+    }
+
+    .table-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 520px;
+      background: #ffffff;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    th {
+      color: #435066;
+      background: #f8fafc;
+      font-weight: 720;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .insight {
+      border-radius: 8px;
+      padding: 12px 13px;
+      border: 1px solid #b8dec7;
+      background: var(--brand-soft);
+      color: #12452a;
+      font-size: 13px;
+    }
+
+    .warning {
+      border-color: #f1cc85;
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .error {
+      border-color: #ffc3bd;
+      background: var(--bad-soft);
+      color: var(--bad);
+    }
+
+    .formula {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+      padding: 13px;
+      color: #344154;
+      font-size: 13px;
+    }
+
+    .formula-title {
+      margin-bottom: 10px;
+      color: #2b3543;
+      font-weight: 720;
+    }
+
+    .formula-body {
+      display: grid;
+      gap: 10px;
+    }
+
+    .math-line {
+      overflow-x: auto;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: #1f2937;
+      font-size: 15px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .fraction {
+      display: inline-grid;
+      grid-template-rows: auto auto;
+      align-items: center;
+      vertical-align: middle;
+      margin: 0 3px;
+      line-height: 1.2;
+    }
+
+    .fraction > span {
+      padding: 2px 6px;
+    }
+
+    .fraction > span:first-child {
+      border-bottom: 1px solid #1f2937;
+    }
+
+    .formula-desc {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .copy-state {
+      color: var(--muted);
+      font-size: 12px;
+      min-height: 18px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 920px) {
+      .header-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .preset-actions {
+        justify-content: flex-start;
+      }
+
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .header-inner,
+      main {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      h1 {
+        font-size: 21px;
+      }
+
+      .grid-2,
+      .kpis {
+        grid-template-columns: 1fr;
+      }
+
+      .group-row {
+        grid-template-columns: 1fr 1fr 36px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="header-inner">
+        <div>
+          <h1>AB 测试样本量计算器</h1>
+          <p class="subtitle">输入基准指标、预期增长和分流比例，实时得到每组进组量、总样本量和预计周期。</p>
+        </div>
+        <div class="preset-actions">
+          <button class="ghost-button" type="button" id="loadExample">载入订阅率示例</button>
+          <button class="ghost-button" type="button" id="loadLiftExample">载入 30% 提升示例</button>
+          <button class="ghost-button" type="button" id="resetForm">重置</button>
+          <button class="primary-button" type="button" id="copyResult">复制结果</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel" aria-labelledby="input-title">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="input-title">实验输入</h2>
+            <p class="panel-note">默认 95% 置信水平、80% 统计功效，适用于转化率类主指标。</p>
+          </div>
+        </div>
+
+        <form class="form" id="calculatorForm">
+          <div class="section">
+            <h3 class="section-title">主指标</h3>
+            <div class="grid-2">
+              <label>
+                指标名称
+                <input id="metricName" value="订阅率" autocomplete="off" />
+              </label>
+              <label>
+                指标类型
+                <select id="metricType">
+                  <option value="conversion">转化率类</option>
+                  <option value="mean">均值类</option>
+                </select>
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                <span id="baselineLabel">基准值 p1</span>
+                <span class="input-wrap with-suffix">
+                  <input id="baseline" type="number" min="0.001" max="99.999" step="0.001" value="8.696" />
+                  <span class="suffix" id="baselineSuffix">%</span>
+                </span>
+              </label>
+              <label>
+                <span id="targetLabel">目标值 p2</span>
+                <span class="input-wrap with-suffix">
+                  <input id="targetValue" type="number" min="0.001" max="99.999" step="0.001" value="10.696" />
+                  <span class="suffix" id="targetSuffix">%</span>
+                </span>
+              </label>
+            </div>
+            <div class="grid-2">
+              <label>
+                相对提升
+                <span class="input-wrap with-suffix">
+                  <input id="relativeLift" type="number" min="0.001" max="500" step="0.001" value="23.001" />
+                  <span class="suffix">%</span>
+                </span>
+              </label>
+            </div>
+            <div class="grid-2 hidden" id="meanFields">
+              <label>
+                标准差估算口径
+                <input id="stdDevEstimate" type="text" value="默认保守估算：σ = 2 × 基准均值" readonly />
+              </label>
+              <label>
+                标准差 σ（可选）
+                <input id="stdDev" type="number" min="0.001" step="0.001" placeholder="可留空" />
+              </label>
+            </div>
+          </div>
+
+          <div class="section">
+            <h3 class="section-title">分流设置</h3>
+            <div class="grid-2">
+              <label>
+                对照组分流
+                <span class="input-wrap with-suffix">
+                  <input id="controlShare" type="number" min="1" max="99" step="1" value="40" />
+                  <span class="suffix">%</span>
+                </span>
+              </label>
+              <label>
+                日均进组人数（可选）
+                <input id="dailyUsers" type="number" min="1" step="1" placeholder="实验开始后再填" />
+              </label>
+            </div>
+
+            <div class="groups" id="groupList" aria-live="polite"></div>
+            <button class="ghost-button add-row" type="button" id="addGroup">添加实验组</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel" aria-labelledby="result-title">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="result-title">计算结果</h2>
+            <p class="panel-note" id="scenarioText">当前方案会自动更新。</p>
+          </div>
+        </div>
+
+        <div class="summary">
+          <div id="message" class="insight"></div>
+
+          <div class="kpis" aria-label="核心结果">
+            <div class="kpi main-kpi">
+              <span>实验总样本量</span>
+              <strong id="totalSample">-</strong>
+            </div>
+            <div class="kpi">
+              <span>最小流量组样本量</span>
+              <strong id="minGroupSample">-</strong>
+            </div>
+            <div class="kpi">
+              <span>预计实验天数</span>
+              <strong id="daysNeeded">-</strong>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>组别</th>
+                  <th>分流</th>
+                  <th>最少样本量</th>
+                  <th>预计占比</th>
+                </tr>
+              </thead>
+              <tbody id="resultRows"></tbody>
+            </table>
+          </div>
+
+          <div class="formula">
+            <div class="formula-title">使用口径</div>
+            <div class="formula-body" id="formulaText"></div>
+          </div>
+
+          <div class="copy-state" id="copyState"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const state = {
+      targetSource: "target",
+      groups: [
+        { name: "实验组 A", share: 30 },
+        { name: "实验组 B", share: 30 }
+      ]
+    };
+
+    const el = {
+      metricName: document.getElementById("metricName"),
+      metricType: document.getElementById("metricType"),
+      baseline: document.getElementById("baseline"),
+      baselineLabel: document.getElementById("baselineLabel"),
+      baselineSuffix: document.getElementById("baselineSuffix"),
+      targetValue: document.getElementById("targetValue"),
+      targetLabel: document.getElementById("targetLabel"),
+      targetSuffix: document.getElementById("targetSuffix"),
+      relativeLift: document.getElementById("relativeLift"),
+      meanFields: document.getElementById("meanFields"),
+      stdDevEstimate: document.getElementById("stdDevEstimate"),
+      stdDev: document.getElementById("stdDev"),
+      controlShare: document.getElementById("controlShare"),
+      dailyUsers: document.getElementById("dailyUsers"),
+      groupList: document.getElementById("groupList"),
+      addGroup: document.getElementById("addGroup"),
+      loadExample: document.getElementById("loadExample"),
+      loadLiftExample: document.getElementById("loadLiftExample"),
+      resetForm: document.getElementById("resetForm"),
+      copyResult: document.getElementById("copyResult"),
+      message: document.getElementById("message"),
+      totalSample: document.getElementById("totalSample"),
+      minGroupSample: document.getElementById("minGroupSample"),
+      daysNeeded: document.getElementById("daysNeeded"),
+      resultRows: document.getElementById("resultRows"),
+      scenarioText: document.getElementById("scenarioText"),
+      formulaText: document.getElementById("formulaText"),
+      copyState: document.getElementById("copyState")
+    };
+
+    function toNumber(input) {
+      const value = Number(input.value);
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    function formatNumber(value) {
+      return Math.round(value).toLocaleString("zh-CN");
+    }
+
+    function formatPercent(value) {
+      return `${Number(value.toFixed(2))}%`;
+    }
+
+    function formatMetricValue(value, metricType) {
+      if (metricType === "conversion") return formatPercent(value * 100);
+      return Number(value.toFixed(3)).toLocaleString("zh-CN");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function buildCopyRows(result) {
+      const daysText = result.daysNeeded ? `${Number(result.daysNeeded.toFixed(1))} 天` : "待实验开始后填写日均进组人数";
+      const summaryRows = [
+        ["实验假设", "主指标", result.metricName],
+        ["实验假设", "指标类型", result.metricType === "conversion" ? "转化率类" : "均值类"],
+        ["实验假设", "基准值", formatMetricValue(result.p1, result.metricType)],
+        ["实验假设", "目标值", formatMetricValue(result.p2, result.metricType)],
+        ["实验假设", "绝对提升", formatMetricValue(result.absoluteLift, result.metricType)],
+        ["实验假设", "相对增长", formatPercent(result.lift * 100)],
+        ...(result.metricType === "mean" ? [["实验假设", "历史标准差", formatMetricValue(result.stdDev, result.metricType)]] : []),
+        ["样本量结果", "每个可比较实验组最少样本量", `${formatNumber(result.minGroupSample)} 人`],
+        ["样本量结果", "实验总样本量", `${formatNumber(result.totalSample)} 人`],
+        ["样本量结果", "预计实验天数", daysText]
+      ];
+      const groupRows = result.rows.map((row) => [
+        "分组明细",
+        row.name,
+        `${formatPercent(row.share)}，约 ${formatNumber(row.sample)} 人`
+      ]);
+      return [["模块", "项目", "结果"], ...summaryRows, ...groupRows];
+    }
+
+    function buildHtmlTable(rows) {
+      const tableRows = rows.map((row, index) => {
+        const tag = index === 0 ? "th" : "td";
+        const cells = row.map((cell) => `<${tag}>${escapeHtml(cell)}</${tag}>`).join("");
+        return `<tr>${cells}</tr>`;
+      }).join("");
+      return `
+        <table>
+          <tbody>${tableRows}</tbody>
+        </table>
+      `;
+    }
+
+    function buildTsvTable(rows) {
+      return rows.map((row) => row.join("\t")).join("\n");
+    }
+
+    function normalCdf(x) {
+      const sign = x < 0 ? -1 : 1;
+      const abs = Math.abs(x) / Math.sqrt(2);
+      const t = 1 / (1 + 0.3275911 * abs);
+      const a1 = 0.254829592;
+      const a2 = -0.284496736;
+      const a3 = 1.421413741;
+      const a4 = -1.453152027;
+      const a5 = 1.061405429;
+      const erf = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-abs * abs);
+      return 0.5 * (1 + sign * erf);
+    }
+
+    function calculatePowerSample(p1, p2) {
+      const p = (p1 + p2) / 2;
+      const delta = Math.abs(p2 - p1);
+      if (delta <= 0) return NaN;
+      const zAlpha = 1.96;
+      const zBeta = 0.84;
+      const numerator = Math.pow(
+        zAlpha * Math.sqrt(2 * p * (1 - p)) +
+        zBeta * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2)),
+        2
+      );
+      return Math.ceil(numerator / Math.pow(delta, 2));
+    }
+
+    function calculateMeanSample(baseline, target, stdDev) {
+      const delta = Math.abs(target - baseline);
+      if (delta <= 0 || stdDev <= 0) return NaN;
+      const zAlpha = 1.96;
+      const zBeta = 0.84;
+      return Math.ceil(Math.pow(zAlpha + zBeta, 2) * 2 * Math.pow(stdDev, 2) / Math.pow(delta, 2));
+    }
+
+    function renderGroups() {
+      el.groupList.innerHTML = "";
+      state.groups.forEach((group, index) => {
+        const row = document.createElement("div");
+        row.className = "group-row";
+        row.innerHTML = `
+          <label>
+            组名
+            <input data-field="name" data-index="${index}" value="${group.name}" autocomplete="off" />
+          </label>
+          <label>
+            分流
+            <span class="input-wrap with-suffix">
+              <input data-field="share" data-index="${index}" type="number" min="1" max="99" step="1" value="${group.share}" />
+              <span class="suffix">%</span>
+            </span>
+          </label>
+          <button class="icon-button" type="button" data-remove="${index}" title="删除实验组" aria-label="删除实验组">×</button>
+        `;
+        el.groupList.appendChild(row);
+      });
+    }
+
+    function getInputs() {
+      const metricType = el.metricType.value;
+      const scale = metricType === "conversion" ? 100 : 1;
+      const baseline = toNumber(el.baseline) / scale;
+      const targetValue = toNumber(el.targetValue) / scale;
+      const relativeLift = toNumber(el.relativeLift) / 100;
+      const p2 = state.targetSource === "relative" ? baseline * (1 + relativeLift) : targetValue;
+      const lift = baseline > 0 ? (p2 - baseline) / baseline : 0;
+      const manualStdDev = toNumber(el.stdDev);
+      const stdDev = metricType === "mean" && manualStdDev <= 0 ? baseline * 2 : manualStdDev;
+      const controlShare = toNumber(el.controlShare);
+      const dailyUsers = toNumber(el.dailyUsers);
+      const groups = state.groups.map((group) => ({
+        name: group.name.trim() || "实验组",
+        share: Number(group.share) || 0
+      }));
+
+      return {
+        metricName: el.metricName.value.trim() || "主指标",
+        metricType,
+        baseline,
+        lift,
+        p2,
+        stdDev,
+        controlShare,
+        dailyUsers,
+        groups
+      };
+    }
+
+    function validate(input) {
+      const shares = [input.controlShare, ...input.groups.map((group) => group.share)];
+      const sum = shares.reduce((total, share) => total + share, 0);
+      if (input.metricType === "conversion" && (input.baseline <= 0 || input.baseline >= 1)) return "基准值需要大于 0% 且小于 100%。";
+      if (input.metricType === "mean" && input.baseline <= 0) return "基准值需要大于 0。";
+      if (input.p2 <= input.baseline) return "目标值需要高于基准值，或绝对/相对提升需要大于 0。";
+      if (input.metricType === "conversion" && input.p2 >= 1) return "实验组预期转化率不能达到或超过 100%。";
+      if (input.metricType === "mean" && input.stdDev <= 0) return "均值类指标需要基准均值大于 0，系统会自动按 2 倍基准均值保守估算标准差。";
+      if (input.groups.length < 1) return "至少需要 1 个实验组。";
+      if (shares.some((share) => share <= 0)) return "所有分流比例都需要大于 0%。";
+      if (Math.abs(sum - 100) > 0.001) return `当前分流合计为 ${formatPercent(sum)}，需要等于 100%。`;
+      if (el.dailyUsers.value.trim() && input.dailyUsers <= 0) return "日均进组人数需要大于 0；如果暂时不知道，可以先留空。";
+      return "";
+    }
+
+    function calculate() {
+      const input = getInputs();
+      const error = validate(input);
+      const p1 = input.baseline;
+      const p2 = input.p2;
+      const absoluteLift = p2 - p1;
+      const minShare = Math.min(input.controlShare, ...input.groups.map((group) => group.share)) / 100;
+      const minGroupSample = input.metricType === "conversion"
+        ? calculatePowerSample(p1, p2)
+        : calculateMeanSample(p1, p2, input.stdDev);
+      const totalSample = Math.ceil(minGroupSample / minShare);
+      const daysNeeded = input.dailyUsers > 0 ? totalSample / input.dailyUsers : null;
+      const rows = [
+        { name: "对照组", share: input.controlShare },
+        ...input.groups
+      ].map((group) => ({
+        ...group,
+        sample: Math.ceil(totalSample * group.share / 100)
+      }));
+
+      return {
+        ...input,
+        error,
+        p1,
+        p2,
+        absoluteLift,
+        minShare,
+        minGroupSample,
+        totalSample,
+        daysNeeded,
+        rows
+      };
+    }
+
+    function renderResult() {
+      const result = calculate();
+      const invalid = Boolean(result.error);
+      syncDerivedMetrics(result);
+
+      el.message.className = invalid ? "insight error" : "insight";
+      el.message.textContent = invalid
+        ? result.error
+        : `${result.metricName} 从 ${formatMetricValue(result.p1, result.metricType)} 提升到 ${formatMetricValue(result.p2, result.metricType)}，绝对提升约 ${formatMetricValue(result.absoluteLift, result.metricType)}。`;
+
+      el.scenarioText.textContent = invalid
+        ? "请修正左侧输入后查看结果。"
+        : `最小分流组为 ${formatPercent(result.minShare * 100)}，按该组倒推总进组量。`;
+
+      el.totalSample.textContent = invalid ? "-" : formatNumber(result.totalSample);
+      el.minGroupSample.textContent = invalid ? "-" : formatNumber(result.minGroupSample);
+      el.daysNeeded.textContent = invalid ? "-" : (result.daysNeeded ? `${Number(result.daysNeeded.toFixed(1))} 天` : "开始后填写");
+
+      el.resultRows.innerHTML = "";
+      if (!invalid) {
+        result.rows.forEach((row) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.name}</td>
+            <td>${formatPercent(row.share)}</td>
+            <td>${formatNumber(row.sample)}</td>
+            <td>${formatPercent((row.sample / result.totalSample) * 100)}</td>
+          `;
+          el.resultRows.appendChild(tr);
+        });
+      }
+
+      renderFormula(result, invalid);
+
+      return result;
+    }
+
+    function renderFormula(result, invalid) {
+      if (invalid) {
+        el.formulaText.innerHTML = '<p class="formula-desc">分流合计需为 100%，并保证基准值和目标值有效。</p>';
+        return;
+      }
+
+      if (result.metricType === "mean") {
+        el.formulaText.innerHTML = `
+          <div class="math-line" aria-label="均值差异样本量公式">
+            n =
+            <span class="fraction">
+              <span>(1.96 + 0.84)<sup>2</sup> × 2σ<sup>2</sup></span>
+              <span>(μ2 - μ1)<sup>2</sup></span>
+            </span>
+          </div>
+          <div class="math-line" aria-label="总样本量公式">
+            实验总样本量 =
+            <span class="fraction">
+              <span>n</span>
+              <span>最小分流比例</span>
+            </span>
+          </div>
+        <p class="formula-desc">
+            μ1 是基准均值，μ2 是目标均值，σ 是标准差。均值类如无法拿到用户级标准差，可先用系统默认粗估；如样本量结果较大或实验风险较高，建议改用转化率类指标，或请数据同学补充历史标准差。
+        </p>
+      `;
+        return;
+      }
+
+      el.formulaText.innerHTML = `
+        <div class="math-line" aria-label="两比例样本量公式">
+          n =
+          <span class="fraction">
+            <span>[1.96 × √(2p(1-p)) + 0.84 × √(p1(1-p1) + p2(1-p2))]<sup>2</sup></span>
+            <span>(p2 - p1)<sup>2</sup></span>
+          </span>
+        </div>
+        <div class="math-line" aria-label="总样本量公式">
+          实验总样本量 =
+          <span class="fraction">
+            <span>n</span>
+            <span>最小分流比例</span>
+          </span>
+        </div>
+        <p class="formula-desc">
+          p1 是基准值，p2 是目标值，p = (p1 + p2) / 2，n 是每个可比较实验组至少需要的样本量。日均进组人数可在实验开始后补填，只用于估算实验周期。
+        </p>
+      `;
+    }
+
+    function syncDerivedMetrics(result) {
+      if (result && Number.isFinite(result.lift) && Number.isFinite(result.absoluteLift)) {
+        const scale = result.metricType === "conversion" ? 100 : 1;
+        if (state.targetSource === "relative") {
+          el.targetValue.value = Number((result.p2 * scale).toFixed(3));
+        } else {
+          el.relativeLift.value = Number((result.lift * 100).toFixed(3));
+        }
+      }
+    }
+
+    function syncMetricTypeUi() {
+      const isMean = el.metricType.value === "mean";
+      el.meanFields.classList.toggle("hidden", !isMean);
+      el.baselineLabel.textContent = isMean ? "基准均值 μ1" : "基准值 p1";
+      el.targetLabel.textContent = isMean ? "目标均值 μ2" : "目标值 p2";
+      el.baselineSuffix.textContent = isMean ? "" : "%";
+      el.targetSuffix.textContent = isMean ? "" : "%";
+      el.baseline.max = isMean ? "" : "99.999";
+      el.targetValue.max = isMean ? "" : "99.999";
+      const baseline = toNumber(el.baseline);
+      el.stdDevEstimate.value = baseline > 0
+        ? `默认保守估算：σ = ${Number((baseline * 2).toFixed(3))}`
+        : "默认保守估算：σ = 2 × 基准均值";
+    }
+
+    function bindEvents() {
+      ["input", "change"].forEach((eventName) => {
+        document.getElementById("calculatorForm").addEventListener(eventName, (event) => {
+          const target = event.target;
+          if (target.id === "targetValue") state.targetSource = "target";
+          if (target.id === "relativeLift") state.targetSource = "relative";
+          if (target.id === "metricType") syncMetricTypeUi();
+          if (target.id === "baseline") syncMetricTypeUi();
+          if (target.dataset && target.dataset.field) {
+            const index = Number(target.dataset.index);
+            const field = target.dataset.field;
+            state.groups[index][field] = field === "share" ? Number(target.value) : target.value;
+          }
+          renderResult();
+        });
+      });
+
+      el.groupList.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove]");
+        if (!button) return;
+        const index = Number(button.dataset.remove);
+        state.groups.splice(index, 1);
+        renderGroups();
+        renderResult();
+      });
+
+      el.addGroup.addEventListener("click", () => {
+        const next = state.groups.length + 1;
+        state.groups.push({ name: `实验组 ${String.fromCharCode(64 + Math.min(next, 26))}`, share: 10 });
+        renderGroups();
+        renderResult();
+      });
+
+      el.loadExample.addEventListener("click", () => {
+        el.metricName.value = "订阅率";
+        el.metricType.value = "conversion";
+        syncMetricTypeUi();
+        el.baseline.value = "8.696";
+        state.targetSource = "target";
+        el.targetValue.value = "10.696";
+        el.controlShare.value = "40";
+        el.dailyUsers.value = "4848";
+        state.groups = [
+          { name: "实验组 A", share: 30 },
+          { name: "实验组 B", share: 30 }
+        ];
+        renderGroups();
+        renderResult();
+      });
+
+      el.loadLiftExample.addEventListener("click", () => {
+        el.metricName.value = "核心指标";
+        el.metricType.value = "conversion";
+        syncMetricTypeUi();
+        el.baseline.value = "4.97";
+        state.targetSource = "relative";
+        el.relativeLift.value = "30";
+        el.controlShare.value = "40";
+        el.dailyUsers.value = "";
+        state.groups = [
+          { name: "实验组 A", share: 30 },
+          { name: "实验组 B", share: 30 }
+        ];
+        renderGroups();
+        renderResult();
+      });
+
+      el.resetForm.addEventListener("click", () => {
+        el.metricName.value = "";
+        el.metricType.value = "conversion";
+        syncMetricTypeUi();
+        el.baseline.value = "";
+        state.targetSource = "target";
+        el.targetValue.value = "";
+        el.relativeLift.value = "";
+        el.controlShare.value = "";
+        el.dailyUsers.value = "";
+        state.groups = [{ name: "实验组 A", share: 50 }];
+        renderGroups();
+        renderResult();
+      });
+
+      el.copyResult.addEventListener("click", async () => {
+        const result = renderResult();
+        if (result.error) {
+          el.copyState.textContent = "输入有误，暂不能复制结果。";
+          return;
+        }
+        const rows = buildCopyRows(result);
+        const html = buildHtmlTable(rows);
+        const text = buildTsvTable(rows);
+        try {
+          if (navigator.clipboard.write && window.ClipboardItem) {
+            await navigator.clipboard.write([
+              new ClipboardItem({
+                "text/html": new Blob([html], { type: "text/html" }),
+                "text/plain": new Blob([text], { type: "text/plain" })
+              })
+            ]);
+          } else {
+            await navigator.clipboard.writeText(text);
+          }
+          el.copyState.textContent = "结果已复制，可直接粘贴到飞书文档为表格。";
+        } catch {
+          el.copyState.textContent = text;
+        }
+      });
+    }
+
+    renderGroups();
+    bindEvents();
+    syncMetricTypeUi();
+    renderResult();
+  </script>
+</body>
+</html>
