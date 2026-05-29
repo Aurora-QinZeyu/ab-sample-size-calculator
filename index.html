@@ -895,17 +895,19 @@
       if (result.metricType === "mean") {
         el.formulaText.innerHTML = `
           <div class="math-line" aria-label="均值差异样本量公式">
-            C_i =
+            <var>C</var><sub>i</sub> =
             <span class="fraction">
-              <span>(1.96 + 0.84)<sup>2</sup> × [σ<sup>2</sup> + σ<sup>2</sup> / k_i]</span>
-              <span>(μ2 - μ1)<sup>2</sup></span>
+              <span>(1.96 + 0.84)<sup>2</sup> × [σ<sup>2</sup> + σ<sup>2</sup> / <var>k</var><sub>i</sub>]</span>
+              <span>(μ<sub>2</sub> - μ<sub>1</sub>)<sup>2</sup></span>
             </span>
           </div>
           <div class="math-line" aria-label="总样本量公式">
-            n_c = max(C_i)，t_i = n_c × k_i，实验总样本量 = n_c + Σt_i
+            <var>n</var><sub>c</sub> = max(<var>C</var><sub>i</sub>)，
+            <var>t</var><sub>i</sub> = <var>n</var><sub>c</sub> × <var>k</var><sub>i</sub>，
+            <var>N</var> = <var>n</var><sub>c</sub> + ∑<var>t</var><sub>i</sub>
           </div>
         <p class="formula-desc">
-            μ1 是基准均值，μ2 是目标均值，σ 是标准差，k_i = 实验组分流 / 对照组分流。均值类如无法拿到用户级标准差，可先用系统默认粗估；如样本量结果较大或实验风险较高，建议改用转化率类指标，或请数据同学补充历史标准差。
+            μ<sub>1</sub> 是基准均值，μ<sub>2</sub> 是目标均值，σ 是标准差，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。均值类如无法拿到用户级标准差，可先用系统默认粗估；如样本量结果较大或实验风险较高，建议改用转化率类指标，或请数据同学补充历史标准差。
         </p>
       `;
         return;
@@ -913,17 +915,19 @@
 
       el.formulaText.innerHTML = `
         <div class="math-line" aria-label="两比例样本量公式">
-          C_i =
+          <var>C</var><sub>i</sub> =
           <span class="fraction">
-            <span>(1.96 + 0.84)<sup>2</sup> × [p1(1-p1) + p2(1-p2) / k_i]</span>
-            <span>(p2 - p1)<sup>2</sup></span>
+            <span>(1.96 + 0.84)<sup>2</sup> × [<var>p</var><sub>1</sub>(1-<var>p</var><sub>1</sub>) + <var>p</var><sub>2</sub>(1-<var>p</var><sub>2</sub>) / <var>k</var><sub>i</sub>]</span>
+            <span>(<var>p</var><sub>2</sub> - <var>p</var><sub>1</sub>)<sup>2</sup></span>
           </span>
         </div>
         <div class="math-line" aria-label="总样本量公式">
-          n_c = max(C_i)，t_i = n_c × k_i，实验总样本量 = n_c + Σt_i
+          <var>n</var><sub>c</sub> = max(<var>C</var><sub>i</sub>)，
+          <var>t</var><sub>i</sub> = <var>n</var><sub>c</sub> × <var>k</var><sub>i</sub>，
+          <var>N</var> = <var>n</var><sub>c</sub> + ∑<var>t</var><sub>i</sub>
         </div>
         <p class="formula-desc">
-          p1 是基准值，p2 是目标值，k_i = 实验组分流 / 对照组分流。先分别计算每个实验组对应的对照组样本量 C_i，再取最大值作为最终对照组样本量 n_c。日均进组人数可在实验开始后补填，只用于估算实验周期。
+          <var>p</var><sub>1</sub> 是基准值，<var>p</var><sub>2</sub> 是目标值，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。先分别计算每个实验组对应的对照组样本量 <var>C</var><sub>i</sub>，再取最大值作为最终对照组样本量 <var>n</var><sub>c</sub>。日均进组人数可在实验开始后补填，只用于估算实验周期。
         </p>
       `;
     }
