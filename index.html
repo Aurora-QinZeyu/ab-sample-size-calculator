@@ -127,9 +127,9 @@
       margin: 0 auto;
       padding: 24px;
       display: grid;
-      grid-template-columns: minmax(0, 0.95fr) minmax(360px, 1.05fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 20px;
-      align-items: start;
+      align-items: stretch;
     }
 
     .panel {
@@ -173,15 +173,10 @@
       gap: 12px;
     }
 
-    .section + .section {
-      border-top: 1px solid var(--line);
-      padding-top: 18px;
-    }
-
     .section-title {
       margin: 0;
       color: #2b3543;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 720;
     }
 
@@ -264,6 +259,10 @@
       gap: 16px;
     }
 
+    .wide-panel {
+      grid-column: 1 / -1;
+    }
+
     .kpis {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -297,6 +296,74 @@
     .main-kpi {
       background: var(--brand-soft);
       border-color: #b8dec7;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .mode-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfd;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+      height: 100%;
+    }
+
+    .mode-card h3 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.3;
+      color: #2b3543;
+    }
+
+    .mode-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .mode-list {
+      margin: 0;
+      padding-left: 18px;
+      color: #344154;
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .alpha-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .alpha-item {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 11px;
+      display: grid;
+      gap: 5px;
+      min-height: 82px;
+    }
+
+    .alpha-item span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .alpha-item strong {
+      font-size: 18px;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
     }
 
     .table-wrap {
@@ -339,9 +406,9 @@
     .insight {
       border-radius: 8px;
       padding: 12px 13px;
-      border: 1px solid #b8dec7;
-      background: var(--brand-soft);
-      color: #12452a;
+      border: 1px solid #f1cc85;
+      background: var(--warn-soft);
+      color: #654000;
       font-size: 13px;
     }
 
@@ -455,6 +522,11 @@
       main {
         grid-template-columns: 1fr;
       }
+
+      .compare-grid,
+      .alpha-grid {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 600px) {
@@ -501,7 +573,7 @@
         <div class="panel-header">
           <div>
             <h2 class="panel-title" id="input-title">实验输入</h2>
-            <p class="panel-note">默认 95% 置信水平、80% 统计功效，适用于转化率类主指标。</p>
+            <p class="panel-note">同一组输入会分别生成验证型结果和多组择优结果。</p>
           </div>
         </div>
 
@@ -523,14 +595,14 @@
             </div>
             <div class="grid-2">
               <label>
-                <span id="baselineLabel">基准值</span>
+                <span id="baselineLabel">基准值 p1</span>
                 <span class="input-wrap with-suffix">
                   <input id="baseline" type="number" min="0.001" max="99.999" step="0.001" value="8.696" />
                   <span class="suffix" id="baselineSuffix">%</span>
                 </span>
               </label>
               <label>
-                <span id="targetLabel">最小可接受目标值 MDE</span>
+                <span id="targetLabel">最小可接受目标值 p2</span>
                 <span class="input-wrap with-suffix">
                   <input id="targetValue" type="number" min="0.001" max="99.999" step="0.001" value="10.696" />
                   <span class="suffix" id="targetSuffix">%</span>
@@ -547,7 +619,7 @@
               </label>
             </div>
             <div class="rule-note">
-              <strong>请基于业务上线标准设定最小可接受目标值 MDE</strong>
+              <strong>请基于业务上线标准设定最小可接受目标值 p2</strong>
               <p>该值不是理想预期，而是本次实验的上线判断门槛。样本量达标后，若实验效果未达到该门槛，说明策略未达到预设上线标准。</p>
             </div>
             <div class="grid-2 hidden" id="meanFields">
@@ -574,7 +646,7 @@
               </label>
               <label>
                 日均进组人数（可选）
-                <input id="dailyUsers" type="number" min="1" step="1" placeholder="实验开始后再填" />
+                <input id="dailyUsers" type="number" min="1" step="1" value="4848" placeholder="实验开始后再填" />
               </label>
             </div>
 
@@ -587,7 +659,7 @@
       <section class="panel" aria-labelledby="result-title">
         <div class="panel-header">
           <div>
-            <h2 class="panel-title" id="result-title">计算结果</h2>
+            <h2 class="panel-title" id="result-title">验证型 AB 样本量</h2>
             <p class="panel-note" id="scenarioText">当前方案会自动更新。</p>
           </div>
         </div>
@@ -632,6 +704,82 @@
           <div class="copy-state" id="copyState"></div>
         </div>
       </section>
+
+      <section class="panel wide-panel" aria-labelledby="selection-title">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title" id="selection-title">多组择优样本量看板</h2>
+            <p class="panel-note">适用于最终要从多个实验组中选择一个上线候选的实验。</p>
+          </div>
+        </div>
+
+        <div class="summary">
+          <div class="compare-grid">
+            <div class="mode-card">
+              <h3>和验证型 AB 的区别</h3>
+              <p>验证型 AB 判断每个实验组是否达到上线门槛；多组择优还要控制“看了多个组后挑最高组”带来的误判风险。</p>
+              <ul class="mode-list">
+                <li>仍然保留对照组，用于判断新方案是否优于当前线上版本。</li>
+                <li>仍然按当前指标类型计算，转化率类用两比例公式，均值类用均值差异公式。</li>
+                <li>择优模式会把 alpha 按实验组数量校正，因此样本量更保守。</li>
+              </ul>
+            </div>
+
+            <div class="mode-card">
+              <h3>择优统计口径</h3>
+              <div class="alpha-grid">
+                <div class="alpha-item">
+                  <span>实验组数量</span>
+                  <strong id="selectionGroupCount">-</strong>
+                </div>
+                <div class="alpha-item">
+                  <span>校正后 alpha</span>
+                  <strong id="selectionAlpha">-</strong>
+                </div>
+                <div class="alpha-item">
+                  <span>对应 Zα/2</span>
+                  <strong id="selectionZAlpha">-</strong>
+                </div>
+              </div>
+              <p id="selectionText">请完成左侧输入后查看择优样本量。</p>
+            </div>
+          </div>
+
+          <div class="kpis" aria-label="多组择优核心结果">
+            <div class="kpi main-kpi">
+              <span>择优总样本量</span>
+              <strong id="selectionTotalSample">-</strong>
+            </div>
+            <div class="kpi">
+              <span>择优对照组样本量</span>
+              <strong id="selectionControlSample">-</strong>
+            </div>
+            <div class="kpi">
+              <span>择优预计天数</span>
+              <strong id="selectionDaysNeeded">-</strong>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>组别</th>
+                  <th>分流</th>
+                  <th>择优最少样本量</th>
+                  <th>预计占比</th>
+                </tr>
+              </thead>
+              <tbody id="selectionRows"></tbody>
+            </table>
+          </div>
+
+          <div class="formula">
+            <div class="formula-title">择优使用口径</div>
+            <div class="formula-body" id="selectionFormulaText"></div>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -672,6 +820,15 @@
       resultRows: document.getElementById("resultRows"),
       scenarioText: document.getElementById("scenarioText"),
       formulaText: document.getElementById("formulaText"),
+      selectionGroupCount: document.getElementById("selectionGroupCount"),
+      selectionAlpha: document.getElementById("selectionAlpha"),
+      selectionZAlpha: document.getElementById("selectionZAlpha"),
+      selectionText: document.getElementById("selectionText"),
+      selectionTotalSample: document.getElementById("selectionTotalSample"),
+      selectionControlSample: document.getElementById("selectionControlSample"),
+      selectionDaysNeeded: document.getElementById("selectionDaysNeeded"),
+      selectionRows: document.getElementById("selectionRows"),
+      selectionFormulaText: document.getElementById("selectionFormulaText"),
       copyState: document.getElementById("copyState")
     };
 
@@ -708,7 +865,7 @@
         ["实验假设", "主指标", result.metricName],
         ["实验假设", "指标类型", result.metricType === "conversion" ? "转化率类" : "均值类"],
         ["实验假设", "基准值", formatMetricValue(result.p1, result.metricType)],
-        ["实验假设", "最小可接受目标值 MDE", formatMetricValue(result.p2, result.metricType)],
+        ["实验假设", "最小可接受目标值", formatMetricValue(result.p2, result.metricType)],
         ["实验假设", "绝对提升", formatMetricValue(result.absoluteLift, result.metricType)],
         ["实验假设", "相对增长", formatPercent(result.lift * 100)],
         ...(result.metricType === "mean" ? [["实验假设", "历史标准差", formatMetricValue(result.stdDev, result.metricType)]] : []),
@@ -716,12 +873,20 @@
         ["样本量结果", "实验总样本量", `${formatNumber(result.totalSample)} 人`],
         ["样本量结果", "预计实验天数", daysText]
       ];
+      const selection = result.selectionResult;
+      const selectionRows = selection && !selection.error ? [
+        ["多组择优结果", "实验组数量", `${selection.groupCount} 个`],
+        ["多组择优结果", "校正后 alpha", selection.adjustedAlpha.toFixed(4)],
+        ["多组择优结果", "择优对照组样本量", `${formatNumber(selection.controlSample)} 人`],
+        ["多组择优结果", "择优总样本量", `${formatNumber(selection.totalSample)} 人`],
+        ["多组择优结果", "择优预计天数", selection.daysNeeded ? `${Number(selection.daysNeeded.toFixed(1))} 天` : "待实验开始后填写日均进组人数"]
+      ] : [];
       const groupRows = result.rows.map((row) => [
         "分组明细",
         row.name,
         `${formatPercent(row.share)}，约 ${formatNumber(row.sample)} 人`
       ]);
-      return [["模块", "项目", "结果"], ...summaryRows, ...groupRows];
+      return [["模块", "项目", "结果"], ...summaryRows, ...groupRows, ...selectionRows];
     }
 
     function buildHtmlTable(rows) {
@@ -754,19 +919,50 @@
       return 0.5 * (1 + sign * erf);
     }
 
-    function calculateConversionControlSample(p1, p2, k) {
+    function inverseNormal(p) {
+      if (p <= 0 || p >= 1) return NaN;
+      const a = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
+      const b = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+      const c = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+      const d = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+      const plow = 0.02425;
+      const phigh = 1 - plow;
+      let q;
+      let r;
+
+      if (p < plow) {
+        q = Math.sqrt(-2 * Math.log(p));
+        return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5])
+          / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+      }
+
+      if (p <= phigh) {
+        q = p - 0.5;
+        r = q * q;
+        return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q
+          / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+      }
+
+      q = Math.sqrt(-2 * Math.log(1 - p));
+      return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5])
+        / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+    }
+
+    function getZAlpha(alpha) {
+      return inverseNormal(1 - alpha / 2);
+    }
+
+    function calculateConversionControlSample(p1, p2, k, zAlpha = 1.96) {
       const delta = Math.abs(p2 - p1);
       if (delta <= 0 || k <= 0) return NaN;
-      const zAlpha = 1.96;
       const zBeta = 0.84;
       const variance = p1 * (1 - p1) + (p2 * (1 - p2)) / k;
       return Math.ceil(Math.pow(zAlpha + zBeta, 2) * variance / Math.pow(delta, 2));
     }
 
-    function calculateMeanControlSample(baseline, target, stdDev, k) {
+    function calculateMeanControlSample(baseline, target, stdDev, k, zAlpha = 1.96) {
       const delta = Math.abs(target - baseline);
       if (delta <= 0 || stdDev <= 0 || k <= 0) return NaN;
-      const zAlpha = 1.96;
       const zBeta = 0.84;
       return Math.ceil(Math.pow(zAlpha + zBeta, 2) * (Math.pow(stdDev, 2) + Math.pow(stdDev, 2) / k) / Math.pow(delta, 2));
     }
@@ -829,7 +1025,7 @@
       const sum = shares.reduce((total, share) => total + share, 0);
       if (input.metricType === "conversion" && (input.baseline <= 0 || input.baseline >= 1)) return "基准值需要大于 0% 且小于 100%。";
       if (input.metricType === "mean" && input.baseline <= 0) return "基准值需要大于 0。";
-      if (input.p2 <= input.baseline) return "最小可接受目标值 MDE 需要高于基准值，或相对提升需要大于 0。";
+      if (input.p2 <= input.baseline) return "最小可接受目标值需要高于基准值，或相对提升需要大于 0。";
       if (input.metricType === "conversion" && input.p2 >= 1) return "实验组预期转化率不能达到或超过 100%。";
       if (input.metricType === "mean" && input.stdDev <= 0) return "均值类指标需要基准均值大于 0，系统会自动按 2 倍基准均值保守估算标准差。";
       if (input.groups.length < 1) return "至少需要 1 个实验组。";
@@ -839,17 +1035,15 @@
       return "";
     }
 
-    function calculate() {
-      const input = getInputs();
-      const error = validate(input);
+    function calculateSamples(input, zAlpha, alphaLabel) {
       const p1 = input.baseline;
       const p2 = input.p2;
       const absoluteLift = p2 - p1;
       const comparisons = input.groups.map((group) => {
         const k = group.share / input.controlShare;
         const controlRequired = input.metricType === "conversion"
-          ? calculateConversionControlSample(p1, p2, k)
-          : calculateMeanControlSample(p1, p2, input.stdDev, k);
+          ? calculateConversionControlSample(p1, p2, k, zAlpha)
+          : calculateMeanControlSample(p1, p2, input.stdDev, k, zAlpha);
         return { ...group, k, controlRequired };
       });
       const controlSample = Math.max(...comparisons.map((group) => group.controlRequired));
@@ -865,10 +1059,11 @@
 
       return {
         ...input,
-        error,
         p1,
         p2,
         absoluteLift,
+        alphaLabel,
+        zAlpha,
         controlSample,
         minGroupSample: controlSample,
         comparisons,
@@ -876,6 +1071,29 @@
         daysNeeded,
         rows
       };
+    }
+
+    function calculateSelection(input, validationError) {
+      if (validationError) return { error: validationError };
+      const groupCount = input.groups.length;
+      const adjustedAlpha = 0.05 / groupCount;
+      const zAlpha = getZAlpha(adjustedAlpha);
+      return {
+        ...calculateSamples(input, zAlpha, "bonferroni"),
+        groupCount,
+        adjustedAlpha
+      };
+    }
+
+    function calculate() {
+      const input = getInputs();
+      const error = validate(input);
+      const result = {
+        ...calculateSamples(input, 1.96, "standard"),
+        error
+      };
+      result.selectionResult = calculateSelection(input, error);
+      return result;
     }
 
     function renderResult() {
@@ -911,13 +1129,84 @@
       }
 
       renderFormula(result, invalid);
+      renderSelectionBoard(result.selectionResult, invalid);
 
       return result;
     }
 
+    function renderSelectionBoard(selection, invalid) {
+      el.selectionRows.innerHTML = "";
+
+      if (invalid || selection.error) {
+        el.selectionGroupCount.textContent = "-";
+        el.selectionAlpha.textContent = "-";
+        el.selectionZAlpha.textContent = "-";
+        el.selectionTotalSample.textContent = "-";
+        el.selectionControlSample.textContent = "-";
+        el.selectionDaysNeeded.textContent = "-";
+        el.selectionText.textContent = "请修正左侧输入后查看多组择优样本量。";
+        el.selectionFormulaText.innerHTML = '<p class="formula-desc">多组择优会在当前公式基础上调整 alpha，用更严格的显著性要求控制多组选择风险。</p>';
+        return;
+      }
+
+      el.selectionGroupCount.textContent = `${selection.groupCount} 个`;
+      el.selectionAlpha.textContent = selection.adjustedAlpha.toFixed(4);
+      el.selectionZAlpha.textContent = Number(selection.zAlpha.toFixed(3));
+      el.selectionTotalSample.textContent = formatNumber(selection.totalSample);
+      el.selectionControlSample.textContent = formatNumber(selection.controlSample);
+      el.selectionDaysNeeded.textContent = selection.daysNeeded ? `${Number(selection.daysNeeded.toFixed(1))} 天` : "开始后填写";
+      el.selectionText.textContent = `按 ${selection.groupCount} 个实验组择优处理，alpha 从 0.05 校正为 ${selection.adjustedAlpha.toFixed(4)}，样本量会比验证型 AB 更保守。`;
+
+      selection.rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.name}</td>
+          <td>${formatPercent(row.share)}</td>
+          <td>${formatNumber(row.sample)}</td>
+          <td>${formatPercent((row.sample / selection.totalSample) * 100)}</td>
+        `;
+        el.selectionRows.appendChild(tr);
+      });
+
+      renderSelectionFormula(selection);
+    }
+
+    function renderSelectionFormula(selection) {
+      const metricFormula = selection.metricType === "mean"
+        ? `
+          <div class="math-line" aria-label="择优均值差异样本量公式">
+            <var>C</var><sub>i</sub> =
+            <span class="fraction">
+              <span>(${Number(selection.zAlpha.toFixed(3))} + 0.84)<sup>2</sup> × [σ<sup>2</sup> + σ<sup>2</sup> / <var>k</var><sub>i</sub>]</span>
+              <span>(μ<sub>2</sub> - μ<sub>1</sub>)<sup>2</sup></span>
+            </span>
+          </div>
+        `
+        : `
+          <div class="math-line" aria-label="择优两比例样本量公式">
+            <var>C</var><sub>i</sub> =
+            <span class="fraction">
+              <span>(${Number(selection.zAlpha.toFixed(3))} + 0.84)<sup>2</sup> × [<var>p</var><sub>1</sub>(1-<var>p</var><sub>1</sub>) + <var>p</var><sub>2</sub>(1-<var>p</var><sub>2</sub>) / <var>k</var><sub>i</sub>]</span>
+              <span>(<var>p</var><sub>2</sub> - <var>p</var><sub>1</sub>)<sup>2</sup></span>
+            </span>
+          </div>
+        `;
+
+      el.selectionFormulaText.innerHTML = `
+        <div class="math-line" aria-label="Bonferroni 校正公式">
+          α<sub>择优</sub> = 0.05 / ${selection.groupCount} = ${selection.adjustedAlpha.toFixed(4)}，
+          Z<sub>α/2</sub> = ${Number(selection.zAlpha.toFixed(3))}
+        </div>
+        ${metricFormula}
+        <p class="formula-desc">
+          多组择优不改变指标类型公式，只把显著性要求按实验组数量校正。该结果适合“最终要从多个实验组中选择一个上线候选”的保守样本量预估。
+        </p>
+      `;
+    }
+
     function renderFormula(result, invalid) {
       if (invalid) {
-        el.formulaText.innerHTML = '<p class="formula-desc">分流合计需为 100%，并保证基准值和最小可接受目标值 MDE 有效。</p>';
+        el.formulaText.innerHTML = '<p class="formula-desc">分流合计需为 100%，并保证基准值和最小可接受目标值有效。</p>';
         return;
       }
 
@@ -927,7 +1216,7 @@
             <var>C</var><sub>i</sub> =
             <span class="fraction">
               <span>(1.96 + 0.84)<sup>2</sup> × [σ<sup>2</sup> + σ<sup>2</sup> / <var>k</var><sub>i</sub>]</span>
-              <span>(MDE - μ<sub>1</sub>)<sup>2</sup></span>
+              <span>(μ<sub>2</sub> - μ<sub>1</sub>)<sup>2</sup></span>
             </span>
           </div>
           <div class="math-line" aria-label="总样本量公式">
@@ -936,7 +1225,7 @@
             <var>N</var> = <var>n</var><sub>c</sub> + ∑<var>t</var><sub>i</sub>
           </div>
         <p class="formula-desc">
-            μ<sub>1</sub> 是基准均值，MDE 是最小可接受目标均值，σ 是标准差，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。均值类如无法拿到用户级标准差，可先用系统默认粗估；如样本量结果较大或实验风险较高，建议改用转化率类指标，或请数据同学补充历史标准差。
+            μ<sub>1</sub> 是基准均值，μ<sub>2</sub> 是最小可接受目标均值，σ 是标准差，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。均值类如无法拿到用户级标准差，可先用系统默认粗估；如样本量结果较大或实验风险较高，建议改用转化率类指标，或请数据同学补充历史标准差。
         </p>
       `;
         return;
@@ -946,8 +1235,8 @@
         <div class="math-line" aria-label="两比例样本量公式">
           <var>C</var><sub>i</sub> =
           <span class="fraction">
-            <span>(1.96 + 0.84)<sup>2</sup> × [<var>p</var><sub>1</sub>(1-<var>p</var><sub>1</sub>) + MDE(1-MDE) / <var>k</var><sub>i</sub>]</span>
-            <span>(MDE - <var>p</var><sub>1</sub>)<sup>2</sup></span>
+            <span>(1.96 + 0.84)<sup>2</sup> × [<var>p</var><sub>1</sub>(1-<var>p</var><sub>1</sub>) + <var>p</var><sub>2</sub>(1-<var>p</var><sub>2</sub>) / <var>k</var><sub>i</sub>]</span>
+            <span>(<var>p</var><sub>2</sub> - <var>p</var><sub>1</sub>)<sup>2</sup></span>
           </span>
         </div>
         <div class="math-line" aria-label="总样本量公式">
@@ -956,7 +1245,7 @@
           <var>N</var> = <var>n</var><sub>c</sub> + ∑<var>t</var><sub>i</sub>
         </div>
         <p class="formula-desc">
-          <var>p</var><sub>1</sub> 是基准值，MDE 是最小可接受目标值，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。先分别计算每个实验组对应的对照组样本量 <var>C</var><sub>i</sub>，再取最大值作为最终对照组样本量 <var>n</var><sub>c</sub>。日均进组人数可在实验开始后补填，只用于估算实验周期。
+          <var>p</var><sub>1</sub> 是基准值，<var>p</var><sub>2</sub> 是最小可接受目标值，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。先分别计算每个实验组对应的对照组样本量 <var>C</var><sub>i</sub>，再取最大值作为最终对照组样本量 <var>n</var><sub>c</sub>。日均进组人数可在实验开始后补填，只用于估算实验周期。
         </p>
       `;
     }
@@ -975,8 +1264,8 @@
     function syncMetricTypeUi() {
       const isMean = el.metricType.value === "mean";
       el.meanFields.classList.toggle("hidden", !isMean);
-      el.baselineLabel.textContent = isMean ? "基准均值" : "基准值";
-      el.targetLabel.textContent = isMean ? "最小可接受目标均值 MDE" : "最小可接受目标值 MDE";
+      el.baselineLabel.textContent = isMean ? "基准均值 μ1" : "基准值 p1";
+      el.targetLabel.textContent = isMean ? "最小可接受目标均值 μ2" : "最小可接受目标值 p2";
       el.baselineSuffix.textContent = isMean ? "" : "%";
       el.targetSuffix.textContent = isMean ? "" : "%";
       el.baseline.max = isMean ? "" : "99.999";
