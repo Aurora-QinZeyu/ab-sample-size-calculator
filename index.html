@@ -173,10 +173,15 @@
       gap: 12px;
     }
 
+    .section + .section {
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+    }
+
     .section-title {
       margin: 0;
       color: #2b3543;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 720;
     }
 
@@ -518,14 +523,14 @@
             </div>
             <div class="grid-2">
               <label>
-                <span id="baselineLabel">基准值 p1</span>
+                <span id="baselineLabel">基准值</span>
                 <span class="input-wrap with-suffix">
                   <input id="baseline" type="number" min="0.001" max="99.999" step="0.001" value="8.696" />
                   <span class="suffix" id="baselineSuffix">%</span>
                 </span>
               </label>
               <label>
-                <span id="targetLabel">最小可接受目标值 p2</span>
+                <span id="targetLabel">最小可接受目标值 MDE</span>
                 <span class="input-wrap with-suffix">
                   <input id="targetValue" type="number" min="0.001" max="99.999" step="0.001" value="10.696" />
                   <span class="suffix" id="targetSuffix">%</span>
@@ -542,8 +547,8 @@
               </label>
             </div>
             <div class="rule-note">
-              <strong>最小可接受目标值 p2 不是理想预期，是上限门槛。</strong>
-              <p>样本量达标后，若实验未达到该门槛，说明策略未达到本实验预设的上限标准。</p>
+              <strong>请基于业务上线标准设定最小可接受目标值 MDE</strong>
+              <p>该值不是理想预期，而是本次实验的上线判断门槛。样本量达标后，若实验效果未达到该门槛，说明策略未达到预设上线标准。</p>
             </div>
             <div class="grid-2 hidden" id="meanFields">
               <label>
@@ -703,7 +708,7 @@
         ["实验假设", "主指标", result.metricName],
         ["实验假设", "指标类型", result.metricType === "conversion" ? "转化率类" : "均值类"],
         ["实验假设", "基准值", formatMetricValue(result.p1, result.metricType)],
-        ["实验假设", "最小可接受目标值", formatMetricValue(result.p2, result.metricType)],
+        ["实验假设", "最小可接受目标值 MDE", formatMetricValue(result.p2, result.metricType)],
         ["实验假设", "绝对提升", formatMetricValue(result.absoluteLift, result.metricType)],
         ["实验假设", "相对增长", formatPercent(result.lift * 100)],
         ...(result.metricType === "mean" ? [["实验假设", "历史标准差", formatMetricValue(result.stdDev, result.metricType)]] : []),
@@ -824,7 +829,7 @@
       const sum = shares.reduce((total, share) => total + share, 0);
       if (input.metricType === "conversion" && (input.baseline <= 0 || input.baseline >= 1)) return "基准值需要大于 0% 且小于 100%。";
       if (input.metricType === "mean" && input.baseline <= 0) return "基准值需要大于 0。";
-      if (input.p2 <= input.baseline) return "最小可接受目标值需要高于基准值，或相对提升需要大于 0。";
+      if (input.p2 <= input.baseline) return "最小可接受目标值 MDE 需要高于基准值，或相对提升需要大于 0。";
       if (input.metricType === "conversion" && input.p2 >= 1) return "实验组预期转化率不能达到或超过 100%。";
       if (input.metricType === "mean" && input.stdDev <= 0) return "均值类指标需要基准均值大于 0，系统会自动按 2 倍基准均值保守估算标准差。";
       if (input.groups.length < 1) return "至少需要 1 个实验组。";
@@ -912,7 +917,7 @@
 
     function renderFormula(result, invalid) {
       if (invalid) {
-        el.formulaText.innerHTML = '<p class="formula-desc">分流合计需为 100%，并保证基准值和最小可接受目标值有效。</p>';
+        el.formulaText.innerHTML = '<p class="formula-desc">分流合计需为 100%，并保证基准值和最小可接受目标值 MDE 有效。</p>';
         return;
       }
 
@@ -922,7 +927,7 @@
             <var>C</var><sub>i</sub> =
             <span class="fraction">
               <span>(1.96 + 0.84)<sup>2</sup> × [σ<sup>2</sup> + σ<sup>2</sup> / <var>k</var><sub>i</sub>]</span>
-              <span>(μ<sub>2</sub> - μ<sub>1</sub>)<sup>2</sup></span>
+              <span>(MDE - μ<sub>1</sub>)<sup>2</sup></span>
             </span>
           </div>
           <div class="math-line" aria-label="总样本量公式">
@@ -931,7 +936,7 @@
             <var>N</var> = <var>n</var><sub>c</sub> + ∑<var>t</var><sub>i</sub>
           </div>
         <p class="formula-desc">
-            μ<sub>1</sub> 是基准均值，μ<sub>2</sub> 是最小可接受目标均值，σ 是标准差，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。均值类如无法拿到用户级标准差，可先用系统默认粗估；如样本量结果较大或实验风险较高，建议改用转化率类指标，或请数据同学补充历史标准差。
+            μ<sub>1</sub> 是基准均值，MDE 是最小可接受目标均值，σ 是标准差，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。均值类如无法拿到用户级标准差，可先用系统默认粗估；如样本量结果较大或实验风险较高，建议改用转化率类指标，或请数据同学补充历史标准差。
         </p>
       `;
         return;
@@ -941,8 +946,8 @@
         <div class="math-line" aria-label="两比例样本量公式">
           <var>C</var><sub>i</sub> =
           <span class="fraction">
-            <span>(1.96 + 0.84)<sup>2</sup> × [<var>p</var><sub>1</sub>(1-<var>p</var><sub>1</sub>) + <var>p</var><sub>2</sub>(1-<var>p</var><sub>2</sub>) / <var>k</var><sub>i</sub>]</span>
-            <span>(<var>p</var><sub>2</sub> - <var>p</var><sub>1</sub>)<sup>2</sup></span>
+            <span>(1.96 + 0.84)<sup>2</sup> × [<var>p</var><sub>1</sub>(1-<var>p</var><sub>1</sub>) + MDE(1-MDE) / <var>k</var><sub>i</sub>]</span>
+            <span>(MDE - <var>p</var><sub>1</sub>)<sup>2</sup></span>
           </span>
         </div>
         <div class="math-line" aria-label="总样本量公式">
@@ -951,7 +956,7 @@
           <var>N</var> = <var>n</var><sub>c</sub> + ∑<var>t</var><sub>i</sub>
         </div>
         <p class="formula-desc">
-          <var>p</var><sub>1</sub> 是基准值，<var>p</var><sub>2</sub> 是最小可接受目标值，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。先分别计算每个实验组对应的对照组样本量 <var>C</var><sub>i</sub>，再取最大值作为最终对照组样本量 <var>n</var><sub>c</sub>。日均进组人数可在实验开始后补填，只用于估算实验周期。
+          <var>p</var><sub>1</sub> 是基准值，MDE 是最小可接受目标值，<var>k</var><sub>i</sub> = 实验组分流 / 对照组分流。先分别计算每个实验组对应的对照组样本量 <var>C</var><sub>i</sub>，再取最大值作为最终对照组样本量 <var>n</var><sub>c</sub>。日均进组人数可在实验开始后补填，只用于估算实验周期。
         </p>
       `;
     }
@@ -970,8 +975,8 @@
     function syncMetricTypeUi() {
       const isMean = el.metricType.value === "mean";
       el.meanFields.classList.toggle("hidden", !isMean);
-      el.baselineLabel.textContent = isMean ? "基准均值 μ1" : "基准值 p1";
-      el.targetLabel.textContent = isMean ? "最小可接受目标均值 μ2" : "最小可接受目标值 p2";
+      el.baselineLabel.textContent = isMean ? "基准均值" : "基准值";
+      el.targetLabel.textContent = isMean ? "最小可接受目标均值 MDE" : "最小可接受目标值 MDE";
       el.baselineSuffix.textContent = isMean ? "" : "%";
       el.targetSuffix.textContent = isMean ? "" : "%";
       el.baseline.max = isMean ? "" : "99.999";
