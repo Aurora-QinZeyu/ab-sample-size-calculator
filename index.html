@@ -186,6 +186,62 @@
       gap: 12px;
     }
 
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .split-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.95fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .split-grid.manual-mode {
+      grid-template-columns: 1.1fr 1fr 1fr;
+    }
+
+    .split-grid.manual-mode .auto-split-field,
+    .split-grid.manual-mode .split-button {
+      display: none;
+    }
+
+    .segmented-control {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .segmented-control button {
+      min-height: 36px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .segmented-control button.active {
+      background: #ffffff;
+      color: var(--brand);
+      box-shadow: 0 1px 3px rgba(24, 32, 42, 0.12);
+    }
+
+    .compact-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
     label {
       display: grid;
       gap: 6px;
@@ -251,6 +307,11 @@
 
     .add-row {
       justify-self: start;
+    }
+
+    .split-button {
+      white-space: nowrap;
+      height: 40px;
     }
 
     .summary {
@@ -541,6 +602,8 @@
       }
 
       .grid-2,
+      .grid-3,
+      .split-grid,
       .kpis {
         grid-template-columns: 1fr;
       }
@@ -562,6 +625,7 @@
         <div class="preset-actions">
           <button class="ghost-button" type="button" id="loadExample">载入订阅率示例</button>
           <button class="ghost-button" type="button" id="loadLiftExample">载入 30% 提升示例</button>
+          <button class="ghost-button" type="button" id="loadRatioExample">载入 PV_CTR 示例</button>
           <button class="ghost-button" type="button" id="resetForm">重置</button>
           <button class="primary-button" type="button" id="copyResult">复制结果</button>
         </div>
@@ -590,6 +654,7 @@
                 <select id="metricType">
                   <option value="conversion">转化率类</option>
                   <option value="mean">均值类</option>
+                  <option value="ratio">用户级比率指标</option>
                 </select>
               </label>
             </div>
@@ -632,24 +697,108 @@
                 <input id="stdDev" type="number" min="0.001" step="0.001" placeholder="可留空" />
               </label>
             </div>
+            <div class="section hidden" id="ratioFields">
+              <h3 class="section-title">比率指标估算模式</h3>
+              <div class="segmented-control" role="group" aria-label="比率指标估算模式">
+                <button class="active" type="button" id="ratioModeRough">粗略估计</button>
+                <button type="button" id="ratioModeAdvanced">高级模式</button>
+              </div>
+              <div id="ratioRoughFields">
+                <p class="compact-note">用于产品早期判断实验大概跑不跑得起。系统会按保守口径自动估算比率波动：σR = 2 × 基准比率。正式立项前建议让数据同学复核。</p>
+                <div class="rule-note">
+                  <strong>粗略估计适合早期预估</strong>
+                  <p>只需要填写基准比率、目标比率、分流和日均进组人数。结果偏保守，用于判断量级，不建议作为最终统计口径。</p>
+                </div>
+              </div>
+              <div class="hidden" id="ratioAdvancedFields">
+                <p class="compact-note">高级模式适合数据同学或分析师使用。请基于最近 7-14 天用户级历史数据提供以下参数。</p>
+                <div class="grid-2">
+                  <label>
+                    分子用户均值 μX
+                    <input id="numeratorMean" type="number" min="0.000001" step="0.000001" placeholder="如人均点击次数" />
+                  </label>
+                  <label>
+                    分母用户均值 μY
+                    <input id="denominatorMean" type="number" min="0.000001" step="0.000001" placeholder="如人均曝光次数" />
+                  </label>
+                </div>
+                <div class="grid-2">
+                  <label>
+                    分子用户方差 σX²
+                    <input id="numeratorVariance" type="number" min="0" step="0.000001" placeholder="点击次数的用户级方差" />
+                  </label>
+                  <label>
+                    分母用户方差 σY²
+                    <input id="denominatorVariance" type="number" min="0" step="0.000001" placeholder="曝光次数的用户级方差" />
+                  </label>
+                </div>
+                <div class="grid-2">
+                  <label>
+                    分子分母协方差 σXY
+                    <input id="covariance" type="number" step="0.000001" placeholder="点击次数与曝光次数的协方差" />
+                  </label>
+                </div>
+              </div>
+              <div class="grid-2 hidden" id="ratioStdFields">
+                <label>
+                  当前使用的比率标准差 σR
+                  <input id="ratioStdPreview" type="text" value="自动估算" readonly />
+                </label>
+              </div>
+              <div class="rule-note">
+                <strong>比率指标按用户级分子/分母计算</strong>
+                <p>例如 PV_CTR：X 是用户点击次数，Y 是用户曝光次数，R = mean(X) / mean(Y)。样本量结果仍然是所需用户数，不是所需 PV 数。CTR 5% 请在基准比率中填写 0.05。</p>
+              </div>
+            </div>
           </div>
 
           <div class="section">
             <h3 class="section-title">分流设置</h3>
-            <div class="grid-2">
+            <div class="split-grid manual-mode" id="splitGrid">
               <label>
-                对照组分流
-                <span class="input-wrap with-suffix">
-                  <input id="controlShare" type="number" min="1" max="99" step="1" value="40" />
-                  <span class="suffix">%</span>
-                </span>
+                分流方式
+                <select id="splitMode">
+                  <option value="manual" selected>手动分流</option>
+                  <option value="even">自动均分</option>
+                </select>
               </label>
+              <label class="auto-split-field">
+                <span id="splitCountLabel">均分份数</span>
+                <select id="splitCount">
+                  <option value="2">均分 2 份：1 对照 + 1 实验</option>
+                  <option value="3">均分 3 份：1 对照 + 2 实验</option>
+                  <option value="4">均分 4 份：1 对照 + 3 实验</option>
+                  <option value="5">均分 5 份：1 对照 + 4 实验</option>
+                  <option value="6">均分 6 份：1 对照 + 5 实验</option>
+                </select>
+              </label>
+              <label>
+                分流说明
+                <input id="splitPreview" type="text" value="保持当前手动分流" readonly />
+              </label>
+              <button class="ghost-button split-button" type="button" id="applySplit">应用均分</button>
+            </div>
+            <div class="grid-2">
               <label>
                 日均进组人数（可选）
                 <input id="dailyUsers" type="number" min="1" step="1" value="4848" placeholder="实验开始后再填" />
               </label>
             </div>
 
+            <div class="group-row">
+              <label>
+                组名
+                <input id="controlName" value="对照组" readonly />
+              </label>
+              <label>
+                分流
+                <span class="input-wrap with-suffix">
+                  <input id="controlShare" type="number" min="1" max="99" step="0.001" value="40" />
+                  <span class="suffix">%</span>
+                </span>
+              </label>
+              <span aria-hidden="true"></span>
+            </div>
             <div class="groups" id="groupList" aria-live="polite"></div>
             <button class="ghost-button add-row" type="button" id="addGroup">添加实验组</button>
           </div>
@@ -720,7 +869,7 @@
               <p>验证型 AB 判断每个实验组是否达到上线门槛；多组择优还要控制“看了多个组后挑最高组”带来的误判风险。</p>
               <ul class="mode-list">
                 <li>仍然保留对照组，用于判断新方案是否优于当前线上版本。</li>
-                <li>仍然按当前指标类型计算，转化率类用两比例公式，均值类用均值差异公式。</li>
+                <li>仍然按当前指标类型计算，转化率类用两比例公式，均值类用均值差异公式，比率指标用用户级比率公式。</li>
                 <li>择优模式会把 alpha 按实验组数量校正，因此样本量更保守。</li>
               </ul>
             </div>
@@ -786,6 +935,7 @@
   <script>
     const state = {
       targetSource: "target",
+      ratioMode: "rough",
       groups: [
         { name: "实验组 A", share: 30 },
         { name: "实验组 B", share: 30 }
@@ -805,12 +955,31 @@
       meanFields: document.getElementById("meanFields"),
       stdDevEstimate: document.getElementById("stdDevEstimate"),
       stdDev: document.getElementById("stdDev"),
+      ratioFields: document.getElementById("ratioFields"),
+      ratioModeRough: document.getElementById("ratioModeRough"),
+      ratioModeAdvanced: document.getElementById("ratioModeAdvanced"),
+      ratioRoughFields: document.getElementById("ratioRoughFields"),
+      ratioAdvancedFields: document.getElementById("ratioAdvancedFields"),
+      ratioStdFields: document.getElementById("ratioStdFields"),
+      ratioStdPreview: document.getElementById("ratioStdPreview"),
+      numeratorMean: document.getElementById("numeratorMean"),
+      denominatorMean: document.getElementById("denominatorMean"),
+      numeratorVariance: document.getElementById("numeratorVariance"),
+      denominatorVariance: document.getElementById("denominatorVariance"),
+      covariance: document.getElementById("covariance"),
+      splitGrid: document.getElementById("splitGrid"),
+      splitMode: document.getElementById("splitMode"),
+      splitCount: document.getElementById("splitCount"),
+      splitPreview: document.getElementById("splitPreview"),
+      applySplit: document.getElementById("applySplit"),
+      controlName: document.getElementById("controlName"),
       controlShare: document.getElementById("controlShare"),
       dailyUsers: document.getElementById("dailyUsers"),
       groupList: document.getElementById("groupList"),
       addGroup: document.getElementById("addGroup"),
       loadExample: document.getElementById("loadExample"),
       loadLiftExample: document.getElementById("loadLiftExample"),
+      loadRatioExample: document.getElementById("loadRatioExample"),
       resetForm: document.getElementById("resetForm"),
       copyResult: document.getElementById("copyResult"),
       message: document.getElementById("message"),
@@ -850,6 +1019,12 @@
       return Number(value.toFixed(3)).toLocaleString("zh-CN");
     }
 
+    function metricTypeLabel(metricType) {
+      if (metricType === "conversion") return "转化率类";
+      if (metricType === "mean") return "均值类";
+      return "用户级比率指标";
+    }
+
     function escapeHtml(value) {
       return String(value)
         .replaceAll("&", "&amp;")
@@ -863,12 +1038,24 @@
       const daysText = result.daysNeeded ? `${Number(result.daysNeeded.toFixed(1))} 天` : "待实验开始后填写日均进组人数";
       const summaryRows = [
         ["实验假设", "主指标", result.metricName],
-        ["实验假设", "指标类型", result.metricType === "conversion" ? "转化率类" : "均值类"],
+        ["实验假设", "指标类型", metricTypeLabel(result.metricType)],
         ["实验假设", "基准值", formatMetricValue(result.p1, result.metricType)],
         ["实验假设", "最小可接受目标值", formatMetricValue(result.p2, result.metricType)],
         ["实验假设", "绝对提升", formatMetricValue(result.absoluteLift, result.metricType)],
         ["实验假设", "相对增长", formatPercent(result.lift * 100)],
         ...(result.metricType === "mean" ? [["实验假设", "历史标准差", formatMetricValue(result.stdDev, result.metricType)]] : []),
+        ...(result.metricType === "ratio" ? [
+          ["比率指标参数", "估算模式", result.ratioMode === "rough" ? "粗略估计" : "高级模式"],
+          ["比率指标参数", "比率标准差 σR", formatMetricValue(result.ratioStd, result.metricType)],
+          ["比率指标参数", "比率近似方差 σR²", formatMetricValue(result.ratioVariance, result.metricType)],
+          ...(result.ratioMode === "advanced" ? [
+            ["比率指标参数", "分子用户均值 μX", formatMetricValue(result.ratioInputs.numeratorMean, result.metricType)],
+            ["比率指标参数", "分母用户均值 μY", formatMetricValue(result.ratioInputs.denominatorMean, result.metricType)],
+            ["比率指标参数", "分子用户方差 σX²", formatMetricValue(result.ratioInputs.numeratorVariance, result.metricType)],
+            ["比率指标参数", "分母用户方差 σY²", formatMetricValue(result.ratioInputs.denominatorVariance, result.metricType)],
+            ["比率指标参数", "分子分母协方差 σXY", formatMetricValue(result.ratioInputs.covariance, result.metricType)]
+          ] : [])
+        ] : []),
         ["样本量结果", "对照组最少样本量", `${formatNumber(result.controlSample)} 人`],
         ["样本量结果", "实验总样本量", `${formatNumber(result.totalSample)} 人`],
         ["样本量结果", "预计实验天数", daysText]
@@ -967,6 +1154,61 @@
       return Math.ceil(Math.pow(zAlpha + zBeta, 2) * (Math.pow(stdDev, 2) + Math.pow(stdDev, 2) / k) / Math.pow(delta, 2));
     }
 
+    function calculateRatioVariance(ratioInputs) {
+      const { numeratorMean, denominatorMean, numeratorVariance, denominatorVariance, covariance } = ratioInputs;
+      if (denominatorMean <= 0) return NaN;
+      return numeratorVariance / Math.pow(denominatorMean, 2)
+        + Math.pow(numeratorMean, 2) * denominatorVariance / Math.pow(denominatorMean, 4)
+        - 2 * numeratorMean * covariance / Math.pow(denominatorMean, 3);
+    }
+
+    function calculateRatioControlSample(baseline, target, ratioVariance, k, zAlpha = 1.96) {
+      const delta = Math.abs(target - baseline);
+      if (delta <= 0 || ratioVariance <= 0 || k <= 0) return NaN;
+      const zBeta = 0.84;
+      return Math.ceil(Math.pow(zAlpha + zBeta, 2) * ratioVariance * (1 + 1 / k) / Math.pow(delta, 2));
+    }
+
+    function getEvenSplitShares(parts) {
+      const base = Math.floor((100 / parts) * 1000) / 1000;
+      const shares = Array.from({ length: parts }, () => base);
+      shares[0] = Number((100 - base * (parts - 1)).toFixed(3));
+      return shares;
+    }
+
+    function syncSplitPreview() {
+      const isManual = el.splitMode.value === "manual";
+      el.splitGrid.classList.toggle("manual-mode", isManual);
+      if (isManual) {
+        el.splitPreview.value = "下方手动填写各组分流";
+        return;
+      }
+      const parts = Math.max(2, Number(el.splitCount.value) || 2);
+      const shares = getEvenSplitShares(parts);
+      const sameShare = shares.every((share) => Math.abs(share - shares[0]) < 0.001);
+      el.splitPreview.value = sameShare
+        ? `每份 ${formatPercent(shares[0])}`
+        : `对照组 ${formatPercent(shares[0])}，其余 ${formatPercent(shares[1])}`;
+    }
+
+    function applyEvenSplit() {
+      if (el.splitMode.value === "manual") {
+        syncSplitPreview();
+        renderResult();
+        return;
+      }
+      const parts = Math.max(2, Number(el.splitCount.value) || 2);
+      const shares = getEvenSplitShares(parts);
+      el.controlShare.value = shares[0];
+      state.groups = shares.slice(1).map((share, index) => ({
+        name: `实验组 ${String.fromCharCode(65 + index)}`,
+        share
+      }));
+      syncSplitPreview();
+      renderGroups();
+      renderResult();
+    }
+
     function renderGroups() {
       el.groupList.innerHTML = "";
       state.groups.forEach((group, index) => {
@@ -1000,6 +1242,17 @@
       const lift = baseline > 0 ? (p2 - baseline) / baseline : 0;
       const manualStdDev = toNumber(el.stdDev);
       const stdDev = metricType === "mean" && manualStdDev <= 0 ? baseline * 2 : manualStdDev;
+      const ratioInputs = {
+        numeratorMean: toNumber(el.numeratorMean),
+        denominatorMean: toNumber(el.denominatorMean),
+        numeratorVariance: toNumber(el.numeratorVariance),
+        denominatorVariance: toNumber(el.denominatorVariance),
+        covariance: toNumber(el.covariance)
+      };
+      const advancedRatioVariance = calculateRatioVariance(ratioInputs);
+      const roughRatioStd = baseline > 0 ? baseline * 2 : 0;
+      const ratioVariance = state.ratioMode === "rough" ? Math.pow(roughRatioStd, 2) : advancedRatioVariance;
+      const ratioStd = ratioVariance > 0 ? Math.sqrt(ratioVariance) : NaN;
       const controlShare = toNumber(el.controlShare);
       const dailyUsers = toNumber(el.dailyUsers);
       const groups = state.groups.map((group) => ({
@@ -1014,6 +1267,10 @@
         lift,
         p2,
         stdDev,
+        ratioMode: state.ratioMode,
+        ratioInputs,
+        ratioVariance,
+        ratioStd,
         controlShare,
         dailyUsers,
         groups
@@ -1025,9 +1282,21 @@
       const sum = shares.reduce((total, share) => total + share, 0);
       if (input.metricType === "conversion" && (input.baseline <= 0 || input.baseline >= 1)) return "基准值需要大于 0% 且小于 100%。";
       if (input.metricType === "mean" && input.baseline <= 0) return "基准值需要大于 0。";
+      if (input.metricType === "ratio" && input.baseline <= 0) return "基准比率需要大于 0。";
       if (input.p2 <= input.baseline) return "最小可接受目标值需要高于基准值，或相对提升需要大于 0。";
       if (input.metricType === "conversion" && input.p2 >= 1) return "实验组预期转化率不能达到或超过 100%。";
       if (input.metricType === "mean" && input.stdDev <= 0) return "均值类指标需要基准均值大于 0，系统会自动按 2 倍基准均值保守估算标准差。";
+      if (input.metricType === "ratio" && input.ratioMode === "rough") {
+        if (!Number.isFinite(input.ratioVariance) || input.ratioVariance <= 0) return "粗略估计需要基准比率大于 0。";
+      }
+      if (input.metricType === "ratio" && input.ratioMode === "advanced") {
+        const ratioValues = Object.values(input.ratioInputs);
+        if (ratioValues.some((value) => !Number.isFinite(value))) return "比率指标的分子、分母、方差和协方差都需要填写有效数字。";
+        if (input.ratioInputs.numeratorMean < 0) return "分子用户均值不能小于 0。";
+        if (input.ratioInputs.denominatorMean <= 0) return "分母用户均值需要大于 0。";
+        if (input.ratioInputs.numeratorVariance < 0 || input.ratioInputs.denominatorVariance < 0) return "分子方差和分母方差不能小于 0。";
+        if (!Number.isFinite(input.ratioVariance) || input.ratioVariance <= 0) return "比率指标近似方差需要大于 0，请检查分子/分母方差和协方差。";
+      }
       if (input.groups.length < 1) return "至少需要 1 个实验组。";
       if (shares.some((share) => share <= 0)) return "所有分流比例都需要大于 0%。";
       if (Math.abs(sum - 100) > 0.001) return `当前分流合计为 ${formatPercent(sum)}，需要等于 100%。`;
@@ -1041,9 +1310,14 @@
       const absoluteLift = p2 - p1;
       const comparisons = input.groups.map((group) => {
         const k = group.share / input.controlShare;
-        const controlRequired = input.metricType === "conversion"
-          ? calculateConversionControlSample(p1, p2, k, zAlpha)
-          : calculateMeanControlSample(p1, p2, input.stdDev, k, zAlpha);
+        let controlRequired;
+        if (input.metricType === "conversion") {
+          controlRequired = calculateConversionControlSample(p1, p2, k, zAlpha);
+        } else if (input.metricType === "mean") {
+          controlRequired = calculateMeanControlSample(p1, p2, input.stdDev, k, zAlpha);
+        } else {
+          controlRequired = calculateRatioControlSample(p1, p2, input.ratioVariance, k, zAlpha);
+        }
         return { ...group, k, controlRequired };
       });
       const controlSample = Math.max(...comparisons.map((group) => group.controlRequired));
@@ -1172,8 +1446,9 @@
     }
 
     function renderSelectionFormula(selection) {
-      const metricFormula = selection.metricType === "mean"
-        ? `
+      let metricFormula;
+      if (selection.metricType === "mean") {
+        metricFormula = `
           <div class="math-line" aria-label="择优均值差异样本量公式">
             <var>C</var><sub>i</sub> =
             <span class="fraction">
@@ -1181,8 +1456,19 @@
               <span>(μ<sub>2</sub> - μ<sub>1</sub>)<sup>2</sup></span>
             </span>
           </div>
-        `
-        : `
+        `;
+      } else if (selection.metricType === "ratio") {
+        metricFormula = `
+          <div class="math-line" aria-label="择优用户级比率指标样本量公式">
+            <var>C</var><sub>i</sub> =
+            <span class="fraction">
+              <span>(${Number(selection.zAlpha.toFixed(3))} + 0.84)<sup>2</sup> × σ<sub>R</sub><sup>2</sup> × (1 + 1 / <var>k</var><sub>i</sub>)</span>
+              <span>(R<sub>2</sub> - R<sub>1</sub>)<sup>2</sup></span>
+            </span>
+          </div>
+        `;
+      } else {
+        metricFormula = `
           <div class="math-line" aria-label="择优两比例样本量公式">
             <var>C</var><sub>i</sub> =
             <span class="fraction">
@@ -1191,6 +1477,7 @@
             </span>
           </div>
         `;
+      }
 
       el.selectionFormulaText.innerHTML = `
         <div class="math-line" aria-label="Bonferroni 校正公式">
@@ -1231,6 +1518,45 @@
         return;
       }
 
+      if (result.metricType === "ratio") {
+        const ratioVarianceLine = result.ratioMode === "rough"
+          ? `
+          <div class="math-line" aria-label="粗略估计比率标准差">
+            σ<sub>R</sub> = 2 × R<sub>1</sub> = ${Number(result.ratioStd.toFixed(3))}
+          </div>
+          `
+          : `
+          <div class="math-line" aria-label="用户级比率指标方差公式">
+            σ<sub>R</sub><sup>2</sup> ≈
+            σ<sub>X</sub><sup>2</sup> / μ<sub>Y</sub><sup>2</sup>
+            + μ<sub>X</sub><sup>2</sup>σ<sub>Y</sub><sup>2</sup> / μ<sub>Y</sub><sup>4</sup>
+            - 2μ<sub>X</sub>σ<sub>XY</sub> / μ<sub>Y</sub><sup>3</sup>
+          </div>
+          `;
+        const ratioDesc = result.ratioMode === "rough"
+          ? "当前为粗略估计模式，系统按 σR = 2 × 基准比率自动估算波动，适合产品早期判断量级；正式立项前建议由数据同学用用户级历史数据复核。"
+          : "当前为高级模式，σR 来自用户级分子/分母均值、方差和协方差。该公式适合 PV_CTR、PV_CVR、客单价等分子/分母型指标；输出仍然是所需用户数，不是 PV、点击或订单数。";
+        el.formulaText.innerHTML = `
+          ${ratioVarianceLine}
+          <div class="math-line" aria-label="用户级比率指标样本量公式">
+            <var>C</var><sub>i</sub> =
+            <span class="fraction">
+              <span>(1.96 + 0.84)<sup>2</sup> × σ<sub>R</sub><sup>2</sup> × (1 + 1 / <var>k</var><sub>i</sub>)</span>
+              <span>(R<sub>2</sub> - R<sub>1</sub>)<sup>2</sup></span>
+            </span>
+          </div>
+          <div class="math-line" aria-label="总样本量公式">
+            <var>n</var><sub>c</sub> = max(<var>C</var><sub>i</sub>)，
+            <var>t</var><sub>i</sub> = <var>n</var><sub>c</sub> × <var>k</var><sub>i</sub>，
+            <var>N</var> = <var>n</var><sub>c</sub> + ∑<var>t</var><sub>i</sub>
+          </div>
+          <p class="formula-desc">
+            R<sub>1</sub> 是基准比率，R<sub>2</sub> 是最小可接受目标比率。${ratioDesc}
+          </p>
+        `;
+        return;
+      }
+
       el.formulaText.innerHTML = `
         <div class="math-line" aria-label="两比例样本量公式">
           <var>C</var><sub>i</sub> =
@@ -1262,18 +1588,38 @@
     }
 
     function syncMetricTypeUi() {
+      const isConversion = el.metricType.value === "conversion";
       const isMean = el.metricType.value === "mean";
+      const isRatio = el.metricType.value === "ratio";
       el.meanFields.classList.toggle("hidden", !isMean);
-      el.baselineLabel.textContent = isMean ? "基准均值 μ1" : "基准值 p1";
-      el.targetLabel.textContent = isMean ? "最小可接受目标均值 μ2" : "最小可接受目标值 p2";
-      el.baselineSuffix.textContent = isMean ? "" : "%";
-      el.targetSuffix.textContent = isMean ? "" : "%";
-      el.baseline.max = isMean ? "" : "99.999";
-      el.targetValue.max = isMean ? "" : "99.999";
+      el.ratioFields.classList.toggle("hidden", !isRatio);
+      el.ratioModeRough.classList.toggle("active", state.ratioMode === "rough");
+      el.ratioModeAdvanced.classList.toggle("active", state.ratioMode === "advanced");
+      el.ratioRoughFields.classList.toggle("hidden", state.ratioMode !== "rough");
+      el.ratioAdvancedFields.classList.toggle("hidden", state.ratioMode !== "advanced");
+      el.ratioStdFields.classList.toggle("hidden", !isRatio);
+      el.baselineLabel.textContent = isMean ? "基准均值 μ1" : isRatio ? "基准比率 R1" : "基准值 p1";
+      el.targetLabel.textContent = isMean ? "最小可接受目标均值 μ2" : isRatio ? "最小可接受目标比率 R2" : "最小可接受目标值 p2";
+      el.baselineSuffix.textContent = isConversion ? "%" : "";
+      el.targetSuffix.textContent = isConversion ? "%" : "";
+      el.baseline.max = isConversion ? "99.999" : "";
+      el.targetValue.max = isConversion ? "99.999" : "";
       const baseline = toNumber(el.baseline);
       el.stdDevEstimate.value = baseline > 0
         ? `默认保守估算：σ = ${Number((baseline * 2).toFixed(3))}`
         : "默认保守估算：σ = 2 × 基准均值";
+      const previewStd = state.ratioMode === "rough"
+        ? baseline * 2
+        : Math.sqrt(calculateRatioVariance({
+          numeratorMean: toNumber(el.numeratorMean),
+          denominatorMean: toNumber(el.denominatorMean),
+          numeratorVariance: toNumber(el.numeratorVariance),
+          denominatorVariance: toNumber(el.denominatorVariance),
+          covariance: toNumber(el.covariance)
+        }));
+      el.ratioStdPreview.value = Number.isFinite(previewStd) && previewStd > 0
+        ? Number(previewStd.toFixed(6))
+        : state.ratioMode === "rough" ? "自动估算" : "等待高级参数";
     }
 
     function bindEvents() {
@@ -1284,6 +1630,7 @@
           if (target.id === "relativeLift") state.targetSource = "relative";
           if (target.id === "metricType") syncMetricTypeUi();
           if (target.id === "baseline") syncMetricTypeUi();
+          if (["numeratorMean", "denominatorMean", "numeratorVariance", "denominatorVariance", "covariance"].includes(target.id)) syncMetricTypeUi();
           if (target.dataset && target.dataset.field) {
             const index = Number(target.dataset.index);
             const field = target.dataset.field;
@@ -1309,10 +1656,44 @@
         renderResult();
       });
 
+      el.splitMode.addEventListener("change", () => {
+        if (el.splitMode.value === "manual") {
+          syncSplitPreview();
+          renderResult();
+          return;
+        }
+        applyEvenSplit();
+      });
+
+      el.splitCount.addEventListener("change", () => {
+        if (el.splitMode.value === "even") {
+          applyEvenSplit();
+          return;
+        }
+        syncSplitPreview();
+      });
+
+      el.applySplit.addEventListener("click", () => {
+        applyEvenSplit();
+      });
+
+      el.ratioModeRough.addEventListener("click", () => {
+        state.ratioMode = "rough";
+        syncMetricTypeUi();
+        renderResult();
+      });
+
+      el.ratioModeAdvanced.addEventListener("click", () => {
+        state.ratioMode = "advanced";
+        syncMetricTypeUi();
+        renderResult();
+      });
+
       el.loadExample.addEventListener("click", () => {
         el.metricName.value = "订阅率";
         el.metricType.value = "conversion";
-        syncMetricTypeUi();
+        el.splitMode.value = "manual";
+        state.ratioMode = "rough";
         el.baseline.value = "8.696";
         state.targetSource = "target";
         el.targetValue.value = "10.696";
@@ -1322,6 +1703,8 @@
           { name: "实验组 A", share: 30 },
           { name: "实验组 B", share: 30 }
         ];
+        syncSplitPreview();
+        syncMetricTypeUi();
         renderGroups();
         renderResult();
       });
@@ -1329,7 +1712,8 @@
       el.loadLiftExample.addEventListener("click", () => {
         el.metricName.value = "核心指标";
         el.metricType.value = "conversion";
-        syncMetricTypeUi();
+        el.splitMode.value = "manual";
+        state.ratioMode = "rough";
         el.baseline.value = "4.97";
         state.targetSource = "relative";
         el.relativeLift.value = "30";
@@ -1339,6 +1723,34 @@
           { name: "实验组 A", share: 30 },
           { name: "实验组 B", share: 30 }
         ];
+        syncSplitPreview();
+        syncMetricTypeUi();
+        renderGroups();
+        renderResult();
+      });
+
+      el.loadRatioExample.addEventListener("click", () => {
+        el.metricName.value = "PV_CTR";
+        el.metricType.value = "ratio";
+        el.splitMode.value = "manual";
+        state.ratioMode = "rough";
+        el.baseline.value = "0.05";
+        state.targetSource = "target";
+        el.targetValue.value = "0.06";
+        el.relativeLift.value = "20";
+        el.numeratorMean.value = "0.5";
+        el.denominatorMean.value = "10";
+        el.numeratorVariance.value = "1.2";
+        el.denominatorVariance.value = "64";
+        el.covariance.value = "6";
+        el.controlShare.value = "40";
+        el.dailyUsers.value = "10000";
+        state.groups = [
+          { name: "实验组 A", share: 30 },
+          { name: "实验组 B", share: 30 }
+        ];
+        syncSplitPreview();
+        syncMetricTypeUi();
         renderGroups();
         renderResult();
       });
@@ -1346,14 +1758,23 @@
       el.resetForm.addEventListener("click", () => {
         el.metricName.value = "";
         el.metricType.value = "conversion";
-        syncMetricTypeUi();
+        el.splitMode.value = "manual";
+        state.ratioMode = "rough";
         el.baseline.value = "";
         state.targetSource = "target";
         el.targetValue.value = "";
         el.relativeLift.value = "";
+        el.stdDev.value = "";
+        el.numeratorMean.value = "";
+        el.denominatorMean.value = "";
+        el.numeratorVariance.value = "";
+        el.denominatorVariance.value = "";
+        el.covariance.value = "";
         el.controlShare.value = "";
         el.dailyUsers.value = "";
         state.groups = [{ name: "实验组 A", share: 50 }];
+        syncSplitPreview();
+        syncMetricTypeUi();
         renderGroups();
         renderResult();
       });
@@ -1387,6 +1808,7 @@
 
     renderGroups();
     bindEvents();
+    syncSplitPreview();
     syncMetricTypeUi();
     renderResult();
   </script>
